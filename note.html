@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最高の足あとノート | meme Oracle</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #f8f3e9;
+    color: #514838;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    line-height: 1.8;
+  }
+
+  .container {
+    max-width: 650px;
+    margin: auto;
+    padding: 35px 20px 70px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 35px;
+  }
+
+  .brand {
+    color: #a38a53;
+    letter-spacing: 3px;
+    font-size: 14px;
+  }
+
+  h1 {
+    color: #826a40;
+    font-size: 27px;
+    margin: 15px 0;
+  }
+
+  h2 {
+    font-size: 19px;
+    color: #826a40;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #777062;
+  }
+
+  .panel {
+    background: #fffdf8;
+    border: 1px solid #d6c49c;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 30px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 15px;
+    border: 1px solid #d6c49c;
+    border-radius: 8px;
+    background: white;
+    color: #514838;
+    font-size: 16px;
+    line-height: 1.8;
+    resize: vertical;
+  }
+
+  button, .file-label {
+    border: none;
+    border-radius: 25px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .save-button {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    background: #aa905b;
+    color: white;
+  }
+
+  .save-button:hover {
+    background: #8c713e;
+  }
+
+  .record {
+    border-bottom: 1px solid #e6dcc7;
+    padding: 22px 0;
+  }
+
+  .record:last-child {
+    border-bottom: none;
+  }
+
+  .date {
+    color: #a38a53;
+    font-size: 13px;
+  }
+
+  .record-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 12px 0;
+  }
+
+  .done {
+    color: #a17a29;
+    font-weight: bold;
+  }
+
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: #b2924e;
+  }
+
+  .backup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .backup button, .file-label {
+    background: #eee5d4;
+    color: #514838;
+  }
+
+  .file-label input {
+    display: none;
+  }
+
+  .count {
+    font-size: 14px;
+    color: #85785e;
+  }
+
+  a {
+    color: #917341;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 12px;
+    color: #9a8f7b;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <div class="brand">meme Oracle</div>
+  <h1>✧ 最高の足あとノート ✧</h1>
+  <p class="subtitle">
+    最高を描く。自分を信じる。<br>
+    未来へ続く、私だけの足あと。
+  </p>
+</header>
+
+<section class="panel">
+
+  <h2>☀ 最高の未来を設定する</h2>
+
+  <p>
+    今の状況も、実現する方法も、<br>
+    いったん脇に置いてみましょう。<br>
+    あなたにとって、最高の未来とは？
+  </p>
+
+  <form id="noteForm">
+
+    <textarea
+      id="wish"
+      maxlength="500"
+      placeholder="私は、想像を超えるほど素晴らしい毎日を過ごしています…"
+      required
+    ></textarea>
+
+    <button class="save-button" type="submit">
+      ✨ 最高の未来を設定する
+    </button>
+
+  </form>
+
+</section>
+
+<section class="panel">
+
+  <h2>🌿 私の最高の足あと</h2>
+
+  <p class="count" id="count"></p>
+
+  <div id="records"></div>
+
+</section>
+
+<section class="panel">
+
+  <h2>📖 大切な記録を残す</h2>
+
+  <p class="subtitle">
+    記録をファイルに保存できます。<br>
+    定期的にバックアップを取ってください。
+  </p>
+
+  <div class="backup">
+
+    <button id="download" type="button">
+      記録を保存する
+    </button>
+
+    <label class="file-label">
+      記録を復元する
+      <input
+        id="upload"
+        type="file"
+        accept=".json,application/json"
+      >
+    </label>
+
+  </div>
+
+</section>
+
+<p style="text-align:center">
+  <a href="./index.html">← オラクルカードに戻る</a>
+</p>
+
+<footer>
+  © meme atelier
+</footer>
+
+</div>
+
+<script>
+const STORAGE_KEY = "meme-oracle-footsteps-v1";
+
+let notes = [];
+
+try {
+  const stored = JSON.parse(
+    localStorage.getItem(STORAGE_KEY) || "[]"
+  );
+
+  if (Array.isArray(stored)) {
+    notes = stored;
+  }
+} catch (error) {
+  alert("保存済みの記録を読み込めませんでした。");
+}
+
+function saveNotes() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(notes)
+    );
+    return true;
+  } catch (error) {
+    alert("保存できませんでした。空き容量などを確認してください。");
+    return false;
+  }
+}
+
+function showDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "日付不明";
+  }
+
+  return date.toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
+
+function renderNotes() {
+  const area = document.getElementById("records");
+  area.replaceChildren();
+
+  const completed = notes.filter(note => note.doneAt).length;
+
+  document.getElementById("count").textContent =
+    `設定した最高：${notes.length}個 ／ 叶った！：${completed}個`;
+
+  if (notes.length === 0) {
+    const message = document.createElement("p");
+    message.textContent =
+      "ここに、あなたの最高の未来が積み重なっていきます。";
+    area.appendChild(message);
+    return;
+  }
+
+  const sorted = [...notes].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+
+  sorted.forEach(note => {
+    const box = document.createElement("div");
+    box.className = "record";
+
+    const date = document.createElement("div");
+    date.className = "date";
+    date.textContent = showDate(note.createdAt);
+
+    const text = document.createElement("p");
+    text.className = "record-text";
+    text.textContent = note.text;
+
+    const label = document.createElement("label");
+    label.className = "check-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = Boolean(note.doneAt);
+
+    const status = document.createElement("span");
+    status.textContent = note.doneAt
+      ? "✨ 叶った！"
+      : "叶ったらチェック";
+    status.className = note.doneAt ? "done" : "";
+
+    checkbox.addEventListener("change", () => {
+      const previous = note.doneAt;
+
+      note.doneAt = checkbox.checked
+        ? new Date().toISOString()
+        : null;
+
+      if (!saveNotes()) {
+        note.doneAt = previous;
+      }
+
+      renderNotes();
+    });
+
+    label.appendChild(checkbox);
+    label.appendChild(status);
+
+    box.appendChild(date);
+    box.appendChild(text);
+    box.appendChild(label);
+
+    if (note.doneAt) {
+      const achieved = document.createElement("div");
+      achieved.className = "date";
+      achieved.textContent =
+        "叶った日：" + showDate(note.doneAt);
+      box.appendChild(achieved);
+    }
+
+    area.appendChild(box);
+  });
+}
+
+document.getElementById("noteForm")
+  .addEventListener("submit", event => {
+    event.preventDefault();
+
+    const input = document.getElementById("wish");
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    const note = {
+      id: Date.now() + "-" + Math.random().toString(36).slice(2),
+      text: text,
+      createdAt: new Date().toISOString(),
+      doneAt: null
+    };
+
+    notes.push(note);
+
+    if (saveNotes()) {
+      input.value = "";
+      renderNotes();
+    } else {
+      notes.pop();
+    }
+  });
+
+document.getElementById("download")
+  .addEventListener("click", () => {
+    const data = JSON.stringify(notes, null, 2);
+
+    const blob = new Blob([data], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "meme-oracle-backup.json";
+    link.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+document.getElementById("upload")
+  .addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = JSON.parse(await file.text());
+
+      if (
+        !Array.isArray(data) ||
+        !data.every(item =>
+          item &&
+          typeof item.id === "string" &&
+          typeof item.text === "string" &&
+          typeof item.createdAt === "string" &&
+          (item.doneAt === null ||
+           typeof item.doneAt === "string")
+        )
+      ) {
+        throw new Error("ファイル形式が違います");
+      }
+
+      if (!confirm(
+        "現在の記録をバックアップの内容に置き換えますか？"
+      )) {
+        return;
+      }
+
+      const previous = notes;
+      notes = data;
+
+      if (saveNotes()) {
+        renderNotes();
+        alert("記録を復元しました。");
+      } else {
+        notes = previous;
+      }
+
+    } catch (error) {
+      alert("記録を復元できませんでした。");
+    } finally {
+      event.target.value = "";
+    }
+  });
+
+renderNotes();
+</script>
+
+</body>
+</html>
