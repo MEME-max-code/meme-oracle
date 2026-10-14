@@ -159,6 +159,38 @@
     font-size: 12px;
     color: #9a8f7b;
   }
+
+  /* 読みやすさと、アイボリー・アンティークゴールドの調和 */
+  body { color: #352d23; font-size: 20px; line-height: 1.85; }
+  .container { max-width: 760px; padding: 32px 20px 64px; }
+  .brand { color: #70572c; font-size: 18px; }
+  h1 { color: #66502b; font-size: clamp(27px, 5vw, 34px); line-height: 1.5; }
+  h2 { color: #66502b; font-size: 25px; line-height: 1.6; }
+  .subtitle, .count, .date, footer { color: #5e5140; font-size: 19px; }
+  .panel { padding: 26px; box-shadow: 0 5px 20px #826a4009; }
+  textarea, input[type="date"] { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 22px; color: #352d23; background: #fff; border: 1px solid #a38a53; border-radius: 8px; padding: 14px; max-width: 100%; }
+  textarea { line-height: 1.8; }
+  textarea::placeholder { color: #6b6257; opacity: 1; }
+  button, .file-label { font: inherit; font-size: 20px; min-height: 48px; line-height: 1.5; }
+  .save-button { background: #755b2e; color: #fffdf8; }
+  .save-button:hover { background: #614923; }
+  .done, a { color: #6b5026; }
+  .field-label { display: block; font-weight: bold; margin: 24px 0 10px; }
+  .check-row { min-height: 48px; }
+  input[type="checkbox"] { width: 26px; height: 26px; flex-shrink: 0; }
+  :focus-visible { outline: 3px solid #755b2e; outline-offset: 4px; }
+  summary { cursor: pointer; color: #66502b; font-size: 23px; font-weight: bold; min-height: 48px; }
+  .file-label { display: inline-flex; align-items: center; }
+  .file-label input { display: block; position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .file-label:focus-within { outline: 3px solid #755b2e; outline-offset: 4px; }
+  #dailyStatus { color: #4e402b; }
+  @media (max-width: 480px) {
+    .container { padding: 24px 14px 48px; }
+    .panel { padding: 20px 16px; margin-bottom: 24px; }
+    h2 { font-size: 24px; }
+    .backup > * { width: 100%; justify-content: center; }
+  }
+
 </style>
 </head>
 
@@ -187,6 +219,7 @@
 
   <form id="noteForm">
 
+    <label class="field-label" for="wish">私が描く、最高の未来</label>
     <textarea
       id="wish"
       maxlength="500"
@@ -203,6 +236,26 @@
 </section>
 
 <section class="panel">
+  <h2>🌷 今日の私を大切にする</h2>
+  <p class="subtitle">小さな喜びも、がんばったことも。ひとことから残しましょう。</p>
+  <form id="dailyForm">
+    <label class="field-label" for="dailyDate">記録する日</label>
+    <input id="dailyDate" type="date" required>
+    <label class="field-label" for="gratitude">今日の感謝</label>
+    <textarea id="gratitude" maxlength="3000" placeholder="ありがとうと思ったこと、うれしかったこと…"></textarea>
+    <label class="field-label" for="selfPraise">今日の自分をほめること</label>
+    <textarea id="selfPraise" maxlength="3000" placeholder="今日もよくがんばったね。小さな一歩を踏み出せたね…"></textarea>
+    <p class="subtitle">iPhoneでは、入力欄をタップしてキーボードのマイクから音声入力できます。</p>
+    <button class="save-button" type="submit">今日の記録を保存する</button>
+    <p id="dailyStatus" role="status" aria-live="polite"></p>
+  </form>
+</section>
+<section class="panel">
+  <h2>📖 感謝と自分へのことば</h2>
+  <div id="dailyRecords"></div>
+</section>
+
+<section class="panel">
 
   <h2>🌿 私の最高の足あと</h2>
 
@@ -214,7 +267,8 @@
 
 <section class="panel">
 
-  <h2>📖 大切な記録を残す</h2>
+  <details>
+  <summary>大切な記録のバックアップ</summary>
 
   <p class="subtitle">
     記録をファイルに保存できます。<br>
@@ -237,6 +291,7 @@
     </label>
 
   </div>
+  </details>
 
 </section>
 
@@ -254,6 +309,7 @@
 const STORAGE_KEY = "meme-oracle-footsteps-v1";
 
 let notes = [];
+let notesReadable = true;
 
 try {
   const stored = JSON.parse(
@@ -262,12 +318,16 @@ try {
 
   if (Array.isArray(stored)) {
     notes = stored;
+  } else {
+    throw new Error("記録の形式を確認してください");
   }
 } catch (error) {
-  alert("保存済みの記録を読み込めませんでした。");
+  notesReadable = false;
+  alert("保存済みの記録を読み込めませんでした。元の記録を保護するため保存を止めています。");
 }
 
 function saveNotes() {
+  if (!notesReadable) { alert("記録を読み込めないため、保存できません。"); return false; }
   try {
     localStorage.setItem(
       STORAGE_KEY,
@@ -399,71 +459,120 @@ document.getElementById("noteForm")
     }
   });
 
-document.getElementById("download")
-  .addEventListener("click", () => {
-    const data = JSON.stringify(notes, null, 2);
 
-    const blob = new Blob([data], {
-      type: "application/json"
+const DAILY_KEY = "meme-oracle-daily-v1";
+let dailyNotes = [];
+let dailyReadable = true;
+function validDaily(item) {
+  return item && typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) &&
+    typeof item.gratitude === "string" && typeof item.selfPraise === "string";
+}
+try {
+  const data = JSON.parse(localStorage.getItem(DAILY_KEY) || "[]");
+  if (!Array.isArray(data) || !data.every(validDaily)) throw new Error("日々の記録の形式が違います");
+  dailyNotes = data;
+} catch (error) {
+  dailyReadable = false;
+  alert("日々の記録を読み込めませんでした。元の記録を保護するため保存を止めています。");
+}
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const dailyDate = document.getElementById("dailyDate");
+const gratitude = document.getElementById("gratitude");
+const selfPraise = document.getElementById("selfPraise");
+const dailyStatus = document.getElementById("dailyStatus");
+dailyDate.value = localToday();
+function loadDailyFields() {
+  const found = dailyNotes.find(item => item.date === dailyDate.value);
+  gratitude.value = found ? found.gratitude : "";
+  selfPraise.value = found ? found.selfPraise : "";
+  dailyStatus.textContent = found ? "この日の記録を開いています。保存すると更新されます。" : "";
+}
+let selectedDate = dailyDate.value;
+dailyDate.addEventListener("change", () => {
+  const previous = dailyNotes.find(item => item.date === selectedDate);
+  const changed = gratitude.value !== (previous?.gratitude || "") || selfPraise.value !== (previous?.selfPraise || "");
+  if (changed && !confirm("入力中の内容はまだ保存されていません。別の日を開きますか？")) {
+    dailyDate.value = selectedDate;
+    return;
+  }
+  selectedDate = dailyDate.value;
+  loadDailyFields();
+});
+function renderDaily() {
+  const area = document.getElementById("dailyRecords");
+  area.replaceChildren();
+  if (!dailyNotes.length) {
+    const p = document.createElement("p");
+    p.textContent = "あなたの感謝と、自分をほめることばがここに積み重なります。";
+    area.appendChild(p);
+  }
+  [...dailyNotes].sort((a,b) => b.date.localeCompare(a.date)).forEach(item => {
+    const box = document.createElement("div"); box.className = "record";
+    const date = document.createElement("div"); date.className = "date";
+    date.textContent = showDate(item.date + "T12:00:00"); box.appendChild(date);
+    [["今日の感謝", item.gratitude], ["今日の自分をほめること", item.selfPraise]].forEach(([title, value]) => {
+      if (!value) return;
+      const heading = document.createElement("strong"); heading.textContent = title;
+      const p = document.createElement("p"); p.className = "record-text"; p.textContent = value;
+      box.append(heading, p);
     });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "meme-oracle-backup.json";
-    link.click();
-
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    area.appendChild(box);
   });
-
-document.getElementById("upload")
-  .addEventListener("change", async event => {
-    const file = event.target.files[0];
-    if (!file) return;
-
+}
+document.getElementById("dailyForm").addEventListener("submit", event => {
+  event.preventDefault();
+  if (!dailyReadable) { alert("日々の記録を読み込めないため、保存できません。"); return; }
+  const item = {date: dailyDate.value, gratitude: gratitude.value.trim(), selfPraise: selfPraise.value.trim()};
+  if (!item.gratitude && !item.selfPraise) { dailyStatus.textContent = "感謝か、自分をほめることをひとこと書いてください。"; return; }
+  const next = dailyNotes.filter(old => old.date !== item.date).concat(item);
+  try {
+    localStorage.setItem(DAILY_KEY, JSON.stringify(next));
+    dailyNotes = next; renderDaily(); dailyStatus.textContent = "この日の記録を保存しました。";
+  } catch (error) { dailyStatus.textContent = "保存できませんでした。入力した内容は残っています。"; }
+});
+document.getElementById("download").addEventListener("click", () => {
+  if (!notesReadable || !dailyReadable) { alert("記録を読み込めないため、バックアップを作成できません。"); return; }
+  const blob = new Blob([JSON.stringify({version: 2, notes, dailyNotes}, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a"); link.href = url; link.download = "meme-oracle-backup.json";
+  link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+function validNote(item) {
+  return item && typeof item.id === "string" && typeof item.text === "string" &&
+    typeof item.createdAt === "string" && (item.doneAt === null || typeof item.doneAt === "string");
+}
+document.getElementById("upload").addEventListener("change", async event => {
+  const file = event.target.files[0]; if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const legacy = Array.isArray(data);
+    const incoming = legacy ? data : data.notes;
+    const incomingDaily = legacy ? dailyNotes : data.dailyNotes;
+    if ((!legacy && data.version !== 2) || !Array.isArray(incoming) || !incoming.every(validNote) ||
+        !Array.isArray(incomingDaily) || !incomingDaily.every(validDaily)) throw new Error("ファイル形式が違います");
+    if (!confirm(legacy ? "最高の未来の記録を、このバックアップに置き換えますか？感謝と自分へのことばはそのまま残ります。" :
+      "最高の未来・感謝・自分へのことばを、このバックアップに置き換えますか？")) return;
+    const previousNotes = localStorage.getItem(STORAGE_KEY);
+    const previousDaily = localStorage.getItem(DAILY_KEY);
     try {
-      const data = JSON.parse(await file.text());
-
-      if (
-        !Array.isArray(data) ||
-        !data.every(item =>
-          item &&
-          typeof item.id === "string" &&
-          typeof item.text === "string" &&
-          typeof item.createdAt === "string" &&
-          (item.doneAt === null ||
-           typeof item.doneAt === "string")
-        )
-      ) {
-        throw new Error("ファイル形式が違います");
-      }
-
-      if (!confirm(
-        "現在の記録をバックアップの内容に置き換えますか？"
-      )) {
-        return;
-      }
-
-      const previous = notes;
-      notes = data;
-
-      if (saveNotes()) {
-        renderNotes();
-        alert("記録を復元しました。");
-      } else {
-        notes = previous;
-      }
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
+      if (!legacy) localStorage.setItem(DAILY_KEY, JSON.stringify(incomingDaily));
     } catch (error) {
-      alert("記録を復元できませんでした。");
-    } finally {
-      event.target.value = "";
+      if (previousNotes === null) localStorage.removeItem(STORAGE_KEY); else localStorage.setItem(STORAGE_KEY, previousNotes);
+      if (previousDaily === null) localStorage.removeItem(DAILY_KEY); else localStorage.setItem(DAILY_KEY, previousDaily);
+      throw error;
     }
-  });
-
-renderNotes();
+    notes = incoming; notesReadable = true;
+    if (!legacy) { dailyNotes = incomingDaily; dailyReadable = true; }
+    renderNotes(); renderDaily(); loadDailyFields();
+    alert("記録を復元しました。");
+  } catch (error) { alert("記録を復元できませんでした。"); }
+  finally { event.target.value = ""; }
+});
+renderNotes(); renderDaily(); loadDailyFields();
 </script>
-
 </body>
 </html>
