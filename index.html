@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>meme Oracle</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(#101c3b, #28385d);
+      color: #f5e8ce;
+      font-family: "Hiragino Mincho ProN", serif;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 50px 20px;
+    }
+
+    h1 {
+      color: #e8c77d;
+      font-size: 32px;
+      letter-spacing: 3px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      margin-bottom: 35px;
+    }
+
+    .card {
+      width: 210px;
+      height: 320px;
+      margin: 30px auto;
+      border: 2px solid #e8c77d;
+      border-radius: 15px;
+      background: linear-gradient(145deg, #26385f, #10182f);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px #0005;
+    }
+
+    .symbol {
+      font-size: 75px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      color: #e8c77d;
+    }
+
+    button {
+      background: #e8c77d;
+      color: #18213c;
+      border: none;
+      border-radius: 30px;
+      padding: 15px 35px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #f7dfa3;
+    }
+
+    #message {
+      margin: 30px auto;
+      max-width: 320px;
+      line-height: 2;
+      font-size: 16px;
+    }
+
+    footer {
+      margin-top: 50px;
+      font-size: 12px;
+      color: #b8ad96;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>meme Oracle</h1>
+
+    <p class="subtitle">
+      星たちから、今日のあなたへメッセージ
+    </p>
+
+    <div class="card">
+      <div class="symbol" id="symbol">✧</div>
+      <div class="card-title" id="cardTitle">
+        Oracle Card
+      </div>
+    </div>
+
+    <button onclick="drawCard()">
+      カードを1枚引く
+    </button>
+
+    <div id="message">
+      心を静かにして、カードを引いてください。
+    </div>
+
+    <footer>
+      © meme atelier
+    </footer>
+
+  </div>
+
+  <script>
+    const cards = [
+      {
+        title: "THE SUN",
+        symbol: "☀",
+        message: "あなたの内側にある光を信じてください。新しい可能性が開かれようとしています。"
+      },
+      {
+        title: "THE MOON",
+        symbol: "☾",
+        message: "答えを急がなくても大丈夫。静かな時間の中で、あなたの直感が道を教えてくれます。"
+      },
+      {
+        title: "THE STAR",
+        symbol: "✧",
+        message: "希望の星はいつもあなたを照らしています。小さな一歩が未来を変えていきます。"
+      }
+    ];
+
+    function drawCard() {
+      const number = Math.floor(Math.random() * cards.length);
+      const card = cards[number];
+
+      document.getElementById("symbol").textContent = card.symbol;
+      document.getElementById("cardTitle").textContent = card.title;
+      document.getElementById("message").textContent = card.message;
+    }
+  </script>
+
+</body>
+</html>
