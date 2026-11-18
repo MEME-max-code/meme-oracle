@@ -1,0 +1,1 @@
+{"id": "./note.html", "name": "最高の足あとノート", "short_name": "足あとノート", "lang": "ja", "start_url": "./note.html", "scope": "./", "display": "standalone", "background_color": "#faf5e9", "theme_color": "#faf5e9", "icons": [{"src": "footsteps-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any"}]}
